@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # NGINX Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-server
+    ports:
+      - "8080:80"
+    networks:
+      - app-net
+    depends_on:
+      - mysql_db
+
+  # MySQL Database
+  mysql_db:
+    image: mysql:8.0
+    container_name: mysql-database
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-net
+
+# Define the isolated network
+networks:
+  app-net:
+    driver: bridge
+
+# Define persistent volume for MySQL data
+volumes:
+  mysql-data:
+    driver: local
