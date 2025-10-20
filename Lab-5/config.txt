@@ -1,0 +1,4 @@
+port=3306
+bind-address=0.0.0.0
+max_connections=100
+innodb_buffer_pool_size=128M
