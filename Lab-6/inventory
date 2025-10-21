@@ -1,0 +1,7 @@
+[webservers]
+master ansible_host=127.0.0.1 ansible_port=2222 ansible_user=vagrant ansible_ssh_private_key_file=/home/o0xwolf/GitHub-SSD/k8s-on-premises/.vagrant/machines/master/virtualbox/private_key
+worker1 ansible_host=127.0.0.1 ansible_port=2200 ansible_user=vagrant ansible_ssh_private_key_file=/home/o0xwolf/GitHub-SSD/k8s-on-premises/.vagrant/machines/worker1/virtualbox/private_key
+worker2 ansible_host=127.0.0.1 ansible_port=2201 ansible_user=vagrant ansible_ssh_private_key_file=/home/o0xwolf/GitHub-SSD/k8s-on-premises/.vagrant/machines/worker2/virtualbox/private_key
+
+[all:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAcceptedKeyTypes=+ssh-rsa -o HostKeyAlgorithms=+ssh-rsa'

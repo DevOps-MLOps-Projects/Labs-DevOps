@@ -1,0 +1,33 @@
+---
+- name: Install and manage system packages
+  hosts: all
+  become: yes
+  vars:
+    web_package: nginx
+    tools:
+      - git
+      - curl
+      - vim
+  
+  tasks:
+    - name: Install web package
+      package:
+        name: "{{ web_package }}"
+        state: present
+    
+    - name: Install extra tools
+      package:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ tools }}"
+    
+    - name: Ensure nginx service is started
+      service:
+        name: "{{ web_package }}"
+        state: started
+        enabled: yes
+    
+    - name: Check nginx version
+      command: "{{ web_package }} -v"
+      register: nginx_result
+      ignore_errors: yes
