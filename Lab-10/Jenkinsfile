@@ -1,0 +1,121 @@
+///////////////////////////////////////
+//                                   //
+//  @author      : 00xWolf           //
+//    GitHub    : @mmsaeed509       //
+//    Developer : Mahmoud Mohamed   //
+//  﫥  Copyright : Exodia OS         //
+//                                   //
+///////////////////////////////////////
+
+
+// -------------- Colors For Build Status -------------- //
+def COLOR_STATUS = [
+
+    'SUCCESS': 'good', 
+    'FAILURE': 'danger',
+
+]
+
+pipeline {
+    
+    // -------------- Agent -------------- //
+    agent any
+    
+    // -------------- Environment Variables -------------- //
+    environment {
+        DOCKER_IMAGE = "nodejs-app"
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        CONTAINER_NAME = "nodejs-app-container"
+        APP_PORT = "3000"
+    }
+    
+    // -------------- Stages -------------- //
+    stages {
+        
+        // -------------- Checkout Stage -------------- //
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code from GitHub...'
+                git branch: 'Master', url: 'https://github.com/abdelrahmanonline4/sourcecode'
+            }
+        }
+        
+        // -------------- Build Docker Image Stage -------------- //
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                script {
+                    // Build the Docker image
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                }
+            }
+        }
+        
+        // -------------- Run Container Stage -------------- //
+        stage('Run Container') {
+            steps {
+                echo 'Starting Docker container...'
+                script {
+                    // Stop and remove existing container if it exists
+                    sh """
+                        docker stop ${CONTAINER_NAME} || true
+                        docker rm ${CONTAINER_NAME} || true
+                    """
+                    
+                    // Run the new container
+                    sh """
+                        docker run -d \
+                        --name ${CONTAINER_NAME} \
+                        -p ${APP_PORT}:${APP_PORT} \
+                        ${DOCKER_IMAGE}:${DOCKER_TAG}
+                    """
+                    
+                    // Verify container is running
+                    sh "docker ps | grep ${CONTAINER_NAME}"
+                }
+            }
+        }
+        
+        // -------------- Verify Deployment Stage -------------- //
+        stage('Verify Deployment') {
+            steps {
+                echo 'Verifying application deployment...'
+                script {
+                    // Wait a moment for the app to start
+                    sleep(time: 10, unit: 'SECONDS')
+                    
+                    // Check if the application is responding
+                    sh """
+                        curl -f http://localhost:${APP_PORT} || echo 'Application health check failed'
+                        docker logs ${CONTAINER_NAME}
+                    """
+                }
+            }
+        }
+    }
+    
+    // -------------- Post Actions -------------- //
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+            echo "Application is running on http://localhost:${APP_PORT}"
+        }
+        
+        failure {
+            echo 'Pipeline failed!'
+            script {
+                // Clean up on failure
+                sh """
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                """
+            }
+        }
+        
+        always {
+            echo 'Cleaning up unused Docker images...'
+            sh 'docker image prune -f'
+        }
+    }
+}
