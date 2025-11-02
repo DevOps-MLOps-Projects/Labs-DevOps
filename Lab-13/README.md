@@ -1,4 +1,4 @@
-### Step 1 — Create New Project
+### Create New Project
 
 Create a new OpenShift project for the lab `nginx-ozil`.
 
@@ -7,7 +7,7 @@ oc new-project nginx-ozil
 oc project
 ```
 
-### Step 2 — Apply Security Policy (SCC anyuid)
+### Apply Security Policy (SCC anyuid)
 
 ```bash
 $ oc adm policy add-scc-to-user anyuid -z default -n nginx-ozil
@@ -18,7 +18,7 @@ clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "defaul
 oc describe scc anyuid | grep Users
 ```
 
-### Step 3 — Deploy Nginx Application
+### Deploy Nginx Application
 
 ```bash
 $ oc new-app --name=nginx-app --docker-image=nginx:latest
@@ -50,8 +50,7 @@ nginx-app   ClusterIP   10.217.5.55   <none>        80/TCP    3m21s
 ```
 
 
-### 
-Step 4 — Create HTTPS Route
+### Create HTTPS Route
 Expose the deployed Nginx service using an HTTPS route (edge termination).
 
 ```bash
@@ -85,7 +84,7 @@ Weight:         100 (100%)
 Endpoints:      10.217.0.110:80
 ```
 
-### Step 5 — Verify Resources
+### Verify Resources
 
 ```bash
 $ oc get all
@@ -144,7 +143,7 @@ https://nginx-https-route-nginx-ozil.apps-crc.testing to pod port 80 (svc/nginx-
 1 info identified, use 'oc status --suggest' to see details.
 ```
 
-### Step 6 — Test Application
+### Test Application
 
 ```bash
 $ curl -k https://nginx-https-route-nginx-ozil.apps-crc.testing
@@ -174,7 +173,7 @@ Commercial support is available at
 </html>
 ```
 
-### Step 7 — Verify Pods
+### Verify Pods
 
 ```bash
 $ oc get pods -n nginx-ozil
