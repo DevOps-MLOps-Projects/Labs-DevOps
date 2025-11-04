@@ -1,32 +1,63 @@
 # Lab 15: OpenShift DaemonSet with Elevated Privileges
 
-## Lab Commands
 
-### Step 1 – Create a New Project
+### Create a New Project
 ```bash
-oc new-project lab15-daemonset
+oc new-project lab15-daemonset-ozil
 ```
 
-### Step 2 – Create a ServiceAccount
+```bash
+Now using project "lab15-daemonset-ozil" on server "https://api.crc.testing:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.43 -- /agnhost serve-hostname
+
+```
+
+---
+
+### Create a ServiceAccount
 ```bash
 oc create serviceaccount privileged-daemonset-sa
 ```
 
-### Step 3 – Assign Elevated Privileges
+```bash
+serviceaccount/privileged-daemonset-sa created
+```
+
+---
+
+### Assign Elevated Privileges
 ```bash
 oc adm policy add-scc-to-user anyuid -z privileged-daemonset-sa
 ```
 
-### Step 4 – Create DaemonSet YAML
+```bash
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:anyuid added: "privileged-daemonset-sa"
+```
+
+---
+
+### Create DaemonSet YAML
 
 [**`daemonset.yaml`**](daemonset.yaml)
 
-### Step 5 – Deploy DaemonSet
+### Deploy DaemonSet
 ```bash
 oc apply -f daemonset.yaml
 ```
 
-### Step 6 – Verify Deployment
+```bash
+```
+
+---
+
+### Verify Deployment
 ```bash
 # Check DaemonSet status
 oc get daemonset
@@ -51,7 +82,16 @@ oc exec <POD_NAME> -- id
 oc exec <POD_NAME> -- whoami
 ```
 
-### Step 7 – Cleanup
 ```bash
-oc delete project lab15-daemonset
+```
+
+---
+
+### Cleanup
+
+```bash
+oc delete project lab15-daemonset-ozil
+```
+
+```bash
 ```
