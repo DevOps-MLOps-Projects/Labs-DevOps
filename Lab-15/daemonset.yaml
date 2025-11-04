@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: privileged-daemon
+  namespace: lab15-daemonset
+  labels:
+    app: privileged-daemon
+spec:
+  selector:
+    matchLabels:
+      app: privileged-daemon
+  template:
+    metadata:
+      labels:
+        app: privileged-daemon
+    spec:
+      serviceAccountName: privileged-daemonset-sa
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+      - name: privileged-container
+        image: registry.redhat.io/ubi8/ubi-minimal:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "=== DaemonSet Pod Information ==="
+          echo "Pod Name: $HOSTNAME"
+          echo "Node Name: $(cat /etc/hostname)"
+          echo "Current User ID: $(id -u)"
+          echo "Current Group ID: $(id -g)"
+          echo "User Info: $(whoami)"
+          echo "=== Root Privilege Test ==="
+          echo "Creating test file in /tmp as root..."
+          touch /tmp/root-test-file
+          ls -la /tmp/root-test-file
+          echo "=== System Information ==="
+          uname -a
+          echo "=== Keeping container alive ==="
+          while true; do
+            echo "$(date): DaemonSet pod running with root privileges on node $(hostname)"
+            sleep 30
+          done
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: host-root
+          mountPath: /host
+          readOnly: true
+      volumes:
+      - name: host-root
+        hostPath:
+          path: /
+          type: Directory
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      - operator: Exists
+        effect: NoExecute
+      hostNetwork: false
+      hostPID: false
+      restartPolicy: Always
