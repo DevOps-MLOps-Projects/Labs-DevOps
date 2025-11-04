@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: privileged-daemon
-  namespace: lab15-daemonset
+  namespace: lab15-daemonset-ozil
   labels:
     app: privileged-daemon
 spec:
