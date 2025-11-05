@@ -251,5 +251,18 @@ oc delete -f db-service.yaml -f database_deployment.yaml -f db-data-pvc.yaml -f 
 ```
 
 ```bash
-
+deployment.apps "backend-deployment" deleted
+service "go-backend" deleted
+deployment.apps "database-deployment" deleted
+persistentvolumeclaim "db-data-pvc" deleted
+secret "db-secret" deleted
+service "db" deleted
+configmap "nginx-config" deleted
+deployment.apps "proxy-deployment" deleted
+route.route.openshift.io "proxy-route" deleted
+service "proxy-service" deleted
+securitycontextconstraints.security.openshift.io "three-tier-app-scc" deleted
+serviceaccount "three-tier-app-sa" deleted
+clusterrole.rbac.authorization.k8s.io "three-tier-app-role" deleted
+clusterrolebinding.rbac.authorization.k8s.io "three-tier-app-binding" deleted
 ```
