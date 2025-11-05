@@ -14,26 +14,22 @@ spec:
       labels:
         app: database
     spec:
-      # OpenShift security context - run as non-root
+      # Service account with SCC binding
+      serviceAccountName: three-tier-app-sa
+      # Allow root access
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 999  # MySQL user ID
-        fsGroup: 999
+        runAsUser: 0  # Root user
+        fsGroup: 0
         seccompProfile:
           type: RuntimeDefault
       containers:
       - name: mysql
         image: mysql:8.0
-        # OpenShift security context for container
+        # Container security context for root access
         securityContext:
-          allowPrivilegeEscalation: false
-          runAsNonRoot: true
-          runAsUser: 999
+          runAsUser: 0  # Root user
           seccompProfile:
             type: RuntimeDefault
-          capabilities:
-            drop:
-            - ALL
         env:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
@@ -77,6 +73,14 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 2
           timeoutSeconds: 1
+        # Resource limits
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
       volumes:
       - name: db-storage
         persistentVolumeClaim:
