@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  labels:
+    app: proxy
+data:
+  nginx.conf: |
+    # Run nginx as non-root user for OpenShift
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /tmp/nginx.pid;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        # Temporary directories for OpenShift non-root
+        client_body_temp_path /tmp/client_temp;
+        proxy_temp_path /tmp/proxy_temp_path;
+        fastcgi_temp_path /tmp/fastcgi_temp;
+        uwsgi_temp_path /tmp/uwsgi_temp;
+        scgi_temp_path /tmp/scgi_temp;
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+
+        access_log /var/log/nginx/access.log main;
+
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+
+        upstream backend {
+            server go-backend:8000;
+        }
+
+        # HTTP server - serve directly
+        server {
+            listen 8080;  # OpenShift uses non-privileged ports
+            server_name _;
+
+            location / {
+                proxy_pass http://backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+
+            # Health check endpoint
+            location /nginx-health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+        }
+
+        # HTTPS server (if SSL certificates are available)
+        server {
+            listen 8443 ssl;  # OpenShift uses non-privileged ports
+            server_name _;
+
+            # SSL configuration - use default certs or mount custom ones
+            ssl_certificate /etc/nginx/ssl/nginx.crt;
+            ssl_certificate_key /etc/nginx/ssl/nginx.key;
+
+            ssl_protocols TLSv1.2 TLSv1.3;
+            ssl_ciphers HIGH:!aNULL:!MD5;
+            ssl_prefer_server_ciphers on;
+
+            location / {
+                proxy_pass http://backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+
+            # Health check endpoint
+            location /nginx-health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+        }
+    }
+  default.conf: |
+    # Empty file to override default nginx config

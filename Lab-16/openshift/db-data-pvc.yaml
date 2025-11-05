@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-data-pvc
+  labels:
+    app: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # OpenShift will use the default storage class
+  # Remove storageClassName to use default, or specify OpenShift storage class

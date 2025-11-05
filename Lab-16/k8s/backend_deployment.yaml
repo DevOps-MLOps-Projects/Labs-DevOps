@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: backend
+        image: mmsaeed509/go-app:v1
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: db-password
+          mountPath: /run/secrets
+          readOnly: true
+      volumes:
+      - name: db-password
+        secret:
+          secretName: db-secret
+          items:
+          - key: password
+            path: db-password

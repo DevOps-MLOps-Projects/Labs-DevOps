@@ -1,0 +1,20 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: proxy-route
+  labels:
+    app: proxy
+spec:
+  # OpenShift will generate a hostname if not specified
+  # host: your-app.apps.cluster-domain.com
+  to:
+    kind: Service
+    name: proxy-service
+    weight: 100
+  port:
+    targetPort: http
+  # Enable TLS termination at the route level
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
