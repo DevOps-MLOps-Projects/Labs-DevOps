@@ -1,19 +1,66 @@
 # OpenShift Deployment
+
 ### Manual Root Access Setup
+
+- Create service account and RBAC
+
 ```bash
-# Create service account and RBAC
 oc apply -f serviceaccount-and-rbac.yaml
+```
 
-# Create custom Security Context Constraint
+```bash
+serviceaccount/three-tier-app-sa created
+clusterrole.rbac.authorization.k8s.io/three-tier-app-role created
+clusterrolebinding.rbac.authorization.k8s.io/three-tier-app-binding created
+```
+
+---
+
+- Create custom Security Context Constraint
+
+```bash
 oc apply -f scc-root-access.yaml
+```
 
-# Bind SCC to service account
+```bash
+securitycontextconstraints.security.openshift.io/three-tier-app-scc created
+```
+
+---
+
+- Bind SCC to service account
+
+```bash
 oc adm policy add-scc-to-user three-tier-app-scc -z three-tier-app-sa
+```
 
-# Deploy with root access
+```bash
+clusterrole.rbac.authorization.k8s.io/system:openshift:scc:three-tier-app-scc added: "three-tier-app-sa"
+```
+
+---
+
+- Deploy with root access
+
+```bash
 oc apply -f database_deployment_root.yaml
+```
+
+```bash
+deployment.apps/database-deployment created
+```
+
+---
+
+```bash
 oc apply -f backend_deployment_root.yaml
 ```
+
+```bash
+deployment.apps/backend-deployment created
+```
+
+---
 
 ### 1. Deploy Database Tier
 
@@ -22,7 +69,10 @@ oc apply -f db-secret.yaml -f db-data-pvc.yaml -f database_deployment.yaml -f db
 ```
 
 ```bash
-
+secret/db-secret created
+persistentvolumeclaim/db-data-pvc created
+deployment.apps/database-deployment configured
+service/db created
 ```
 
 ---
@@ -34,7 +84,8 @@ oc apply -f backend_deployment.yaml -f backend_service.yaml
 ```
 
 ```bash
-
+deployment.apps/backend-deployment configured
+service/go-backend created
 ```
 
 ---
@@ -46,7 +97,10 @@ oc apply -f nginx-configmap.yaml -f proxy_deployment.yaml -f proxy_service.yaml 
 ```
 
 ```bash
-
+configmap/nginx-config created
+deployment.apps/proxy-deployment created
+service/proxy-service created
+route.route.openshift.io/proxy-route created
 ```
 
 ---
@@ -59,80 +113,143 @@ oc get routes
 ```
 
 ```bash
-
+NAME          HOST/PORT                                 PATH   SERVICES        PORT   TERMINATION     WILDCARD
+proxy-route   proxy-route-three-tier.apps-crc.testing          proxy-service   http   edge/Redirect   None
 ```
 
 ---
+
 ### Test the Application
+
+- Get the route hostname
+
 ```bash
-# Get the route hostname
-ROUTE_HOST=$(oc get route proxy-route -o jsonpath='{.spec.host}')
-
-# Test HTTP access
-curl http://$ROUTE_HOST
-
-# Test HTTPS access (if TLS is configured)
-curl https://$ROUTE_HOST
+oc get route proxy-route
 ```
 
 ```bash
+NAME          HOST/PORT                                 PATH   SERVICES        PORT   TERMINATION     WILDCARD
+proxy-route   proxy-route-three-tier.apps-crc.testing          proxy-service   http   edge/Redirect   None
+```
 
+```bash
+curl -k https://proxy-route-three-tier.apps-crc.testing
+```
+
+```bash
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style type="text/css">
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        line-height: 1.66666667;
+        font-size: 16px;
+        color: #333;
+        background-color: #fff;
+        margin: 2em 1em;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 400;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      .alert.alert-info {
+        background-color: #F0F0F0;
+        margin-top: 30px;
+        padding: 30px;
+      }
+      .alert p {
+        padding-left: 35px;
+      }
+      ul {
+        padding-left: 51px;
+        position: relative;
+      }
+      li {
+        font-size: 14px;
+        margin-bottom: 1em;
+      }
+      p.info {
+        position: relative;
+        font-size: 20px;
+      }
+      p.info:before, p.info:after {
+        content: "";
+        left: 0;
+        position: absolute;
+        top: 0;
+      }
+      p.info:before {
+        background: #0066CC;
+        border-radius: 16px;
+        color: #fff;
+        content: "i";
+        font: bold 16px/24px serif;
+        height: 24px;
+        left: 0px;
+        text-align: center;
+        top: 4px;
+        width: 24px;
+      }
+
+      @media (min-width: 768px) {
+        body {
+          margin: 6em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>Application is not available</h1>
+      <p>The application is currently not serving requests at this endpoint. It may not have been started or is still starting.</p>
+
+      <div class="alert alert-info">
+        <p class="info">
+          Possible reasons you are seeing this page:
+        </p>
+        <ul>
+          <li>
+            <strong>The host doesn't exist.</strong>
+            Make sure the hostname was typed correctly and that a route matching this hostname exists.
+          </li>
+          <li>
+            <strong>The host exists, but doesn't have a matching path.</strong>
+            Check if the URL path was typed correctly and that the route was created using the desired path.
+          </li>
+          <li>
+            <strong>Route and path matches, but all pods are down.</strong>
+            Make sure that the resources exposed by this route (pods, services, deployment configs, etc) have at least one pod running.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
 ```
 
 ---
 
-## Monitoring
+### Cleanup
 
-### Check Pod Status
+- Delete all resources
+
 ```bash
-oc get pods
-```
-
-### View Logs
-```bash
-# Backend logs
-oc logs -l app=backend
-
-# Database logs
-oc logs -l app=database
-
-# Proxy logs
-oc logs -l app=proxy
-```
-
-## Cleanup
-```bash
-# Delete all resources
 oc delete -f .
+```
 
-# Or delete in reverse order
+Or delete in reverse order
+
+```bash
 oc delete -f proxy_route.yaml -f proxy_service.yaml -f proxy_deployment.yaml -f nginx-configmap.yaml
 oc delete -f backend_service.yaml -f backend_deployment.yaml
 oc delete -f db-service.yaml -f database_deployment.yaml -f db-data-pvc.yaml -f db-secret.yaml
 ```
 
-
-
-## Troubleshooting
-
-### Common Issues
-1. **Image Pull Errors**: Ensure images are accessible from OpenShift cluster
-2. **Storage Issues**: Verify storage class is available
-3. **Route Access**: Check if routes are properly configured and DNS is resolving
-4. **Security Context Warnings**: Use the updated manifests with seccompProfile settings
-5. **Permission Denied**: Use root access deployment if containers need root privileges
-
-### Debug Commands
 ```bash
-# Describe resources
-oc describe deployment database-deployment
-oc describe pvc db-data-pvc
-oc describe route proxy-route
 
-# Check events
-oc get events --sort-by=.metadata.creationTimestamp
-
-# Check SCC assignments
-oc describe scc three-tier-app-scc
-oc get scc -o name | xargs -I {} oc describe {}
 ```
