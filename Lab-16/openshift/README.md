@@ -108,6 +108,16 @@ route.route.openshift.io/proxy-route created
 # Access the Application
 
 ### Get Route URL
+
+```bash
+oc get pods
+```
+
+```bash
+NAME                    READY   STATUS    RESTARTS   AGE
+backend-image-1-build   1/1     Running     0        12m
+```
+
 ```bash
 oc get routes
 ```
