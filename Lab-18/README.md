@@ -76,6 +76,8 @@ Lab-18/
 
 ```bash
 terraform destroy
+# or 
+terraform destroy -auto-approve
 ```
 
 ---
